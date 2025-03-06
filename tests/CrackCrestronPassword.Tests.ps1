@@ -159,14 +159,6 @@ Describe "Crestron Password Cracker Tests" {
 
     # Dynamic tests for real sample files
     Context "Real sample file tests" {
-        It "Should correctly process TestSmw1.smw file" {
-            $sampleFile = Join-Path $SamplesDir "TestSmw1.smw"
-            Test-Path $sampleFile | Should -BeTrue
-            $output = & $ScriptPath $sampleFile *>&1
-            $outputText = $output -join "`n"
-            $outputText | Should -Match "Password Protection Found"
-        }
-
         # Dynamic tests for protected files
         BeforeAll {
             $protectedDir = Join-Path $SamplesDir "protected"

@@ -70,7 +70,6 @@ crack-crestron-password/
 │   └── samples/                 # Test sample files
 │       ├── protected/           # Password-protected sample files
 │       ├── unprotected/         # Non-protected sample files
-│       └── TestSmw1.smw         # Test file
 ```
 
 ## Running Tests :test_tube:
