@@ -1,0 +1,20 @@
+### PowerShell ###
+# Exclude packaged modules
+*.zip
+
+# Exclude .NET assemblies from source
+*.dll
+
+# Crestron Specific
+*.bak
+SPlsWork/
+*.ush
+*.lpz*
+*.smft
+*.sm2
+*Crosspoint*
+*.ASV
+*.sig
+
+# git guardian
+.cache_ggshield

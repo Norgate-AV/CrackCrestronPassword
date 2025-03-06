@@ -1,0 +1,58 @@
+name: Run Tests
+
+on:
+  push:
+    branches: [master]
+
+  pull_request:
+    branches: [master]
+
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Test on ${{ matrix.os }}
+
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup PowerShell on non-Windows platforms
+        if: matrix.os != 'windows-latest'
+        run: |
+          # Display PowerShell version information
+          pwsh -c '$PSVersionTable'
+
+      - name: Run tests on Windows
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          # Enable script execution
+          Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force
+
+          # Run the tests
+          ./Run-Tests.ps1
+
+      - name: Run tests on macOS/Linux
+        if: matrix.os != 'windows-latest'
+        shell: pwsh
+        run: |
+          # Run the tests
+          ./Run-Tests.ps1
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results-${{ matrix.os }}
+          path: |
+            TestResults/
+            */TestResults/
+          if-no-files-found: ignore
