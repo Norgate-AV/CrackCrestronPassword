@@ -149,6 +149,36 @@ function Find-StartMarker {
     return -1  # Marker not found
 }
 
+# Function to find a byte pattern in a file
+function Find-BytePattern {
+    param (
+        [Parameter(Mandatory = $true)]
+        [byte[]]$FileBytes,
+
+        [Parameter(Mandatory = $false)]
+        [string]$Pattern = "FeSchVr"
+    )
+
+    $patternBytes = [System.Text.Encoding]::ASCII.GetBytes($Pattern)
+    $patternIndex = -1
+
+    for ($i = 0; $i -lt ($FileBytes.Length - $patternBytes.Length); $i++) {
+        $match = $true
+        for ($j = 0; $j -lt $patternBytes.Length; $j++) {
+            if ($FileBytes[$i + $j] -ne $patternBytes[$j]) {
+                $match = $false
+                break
+            }
+        }
+        if ($match) {
+            $patternIndex = $i
+            break
+        }
+    }
+
+    return $patternIndex
+}
+
 # Read the file as bytes to avoid any text encoding issues
 try {
     $fileBytes = [System.IO.File]::ReadAllBytes($Path)
@@ -159,22 +189,7 @@ catch {
 }
 
 # Look for "FeSchVr" in the binary data
-$feSchVrBytes = [System.Text.Encoding]::ASCII.GetBytes("FeSchVr")
-$feSchVrIndex = -1
-
-for ($i = 0; $i -lt ($fileBytes.Length - $feSchVrBytes.Length); $i++) {
-    $match = $true
-    for ($j = 0; $j -lt $feSchVrBytes.Length; $j++) {
-        if ($fileBytes[$i + $j] -ne $feSchVrBytes[$j]) {
-            $match = $false
-            break
-        }
-    }
-    if ($match) {
-        $feSchVrIndex = $i
-        break
-    }
-}
+$feSchVrIndex = Find-BytePattern -FileBytes $fileBytes
 
 if ($feSchVrIndex -lt 0) {
     Write-Results -Path $Path -Status "No Password Protection"
