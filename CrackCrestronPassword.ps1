@@ -44,24 +44,19 @@ function Write-Results {
     param (
         [string]$Path,
         [string]$Status,
-        [string]$Encrypted = "",
-        [string]$Decrypted = ""
+        [string]$Password = ""
     )
 
     Write-Verbose "Writing results - Status: $Status"
-    Write-Host "`n=========== Crestron Password Analyzer ===========`n"
+    Write-Host "`n==================== Result =====================`n"
     Write-Host "File: $Path"
     Write-Host "Status: $Status"
 
-    if ($Encrypted -ne "") {
-        Write-Host "Encrypted: $Encrypted"
+    if ($Password -ne "") {
+        Write-Host "Password: $Password"
     }
 
-    if ($Decrypted -ne "") {
-        Write-Host "Decrypted: $Decrypted"
-    }
-
-    Write-Host "`n================================================="
+    Write-Host "`n=================================================`n"
 }
 
 # Function to format bytes as mixed hex/ASCII
@@ -71,7 +66,7 @@ function Format-BytesAsMixedHexAscii {
         [byte[]]$Bytes
     )
 
-    Write-Verbose "Formatting ${$Bytes.Length} bytes as mixed hex/ASCII"
+    Write-Verbose "Formatting $($Bytes.Length) bytes as mixed hex/ASCII"
     $result = [System.Text.StringBuilder]::new()
 
     foreach ($byte in $Bytes) {
@@ -96,7 +91,7 @@ function ConvertFrom-CrestronEncrypted {
         [byte[]]$EncryptedBytes
     )
 
-    Write-Verbose "Decrypting ${$EncryptedBytes.Length} bytes of Crestron encrypted data"
+    Write-Verbose "Decrypting $($EncryptedBytes.Length) bytes of Crestron encrypted data"
     $decrypted = ""
     foreach ($byte in $EncryptedBytes) {
         $decryptedByte = [int]($byte / 2)
@@ -123,7 +118,7 @@ function Find-EndMarker {
         [int]$StartSearchAt
     )
 
-    Write-Verbose "Searching for end marker starting at position $StartSearchAt in ${$FileBytes.Length} bytes"
+    Write-Verbose "Searching for end marker starting at position $StartSearchAt in $($FileBytes.Length) bytes"
     # Look for the "TŠ" marker - T (0x54) followed by Š (0x8A)
     for ($i = $StartSearchAt; $i -lt ($FileBytes.Length - 1); $i++) {
         if ($FileBytes[$i] -eq 0x54 -and $FileBytes[$i + 1] -eq 0x8A) {
@@ -170,7 +165,7 @@ function Find-BytePattern {
         [string]$Pattern = "FeSchVr"
     )
 
-    Write-Verbose "Searching for pattern '$Pattern' in ${$FileBytes.Length} bytes"
+    Write-Verbose "Searching for pattern '$Pattern' in $($FileBytes.Length) bytes"
     $patternBytes = [System.Text.Encoding]::ASCII.GetBytes($Pattern)
     $patternIndex = -1
 
@@ -262,5 +257,9 @@ Write-Verbose "Successfully decrypted password: $decrypted"
 Write-Verbose "Displaying final results"
 Write-Results -Path $Path `
     -Status "Password Protection Found" `
-    -Encrypted "Hex: $encryptedHex`nMixed ASCII/Hex: $encryptedMixed`nRaw: $encryptedString" `
-    -Decrypted $decrypted
+    -Password $decrypted
+
+Write-Verbose "`nEncrypted password details:"
+Write-Verbose "Hex: $encryptedHex"
+Write-Verbose "Mixed: $encryptedMixed"
+Write-Verbose "Raw: $encryptedString"
