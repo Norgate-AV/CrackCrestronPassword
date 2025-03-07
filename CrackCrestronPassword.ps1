@@ -264,9 +264,3 @@ Write-Results -Path $Path `
     -Status "Password Protection Found" `
     -Encrypted "Hex: $encryptedHex`nMixed ASCII/Hex: $encryptedMixed`nRaw: $encryptedString" `
     -Decrypted $decrypted
-
-# Add byte value debug info
-Write-Verbose "`nDebug Information:"
-Write-Verbose "Start marker index: $startMarkerIndex, End marker index: $endMarkerIndex"
-Write-Verbose "Encrypted string byte values: $($encryptedBytes -join ', ')"
-Write-Verbose "Decrypted byte values: $(($encryptedBytes | ForEach-Object { [int]($_ / 2) }) -join ', ')"
