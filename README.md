@@ -55,7 +55,7 @@ For password-protected files:
 The script will output information about the provided file:
 
 ```
-=========== Crestron Password Analyzer ===========
+==================== Result =====================
 
 File: C:\Projects\CrestronPrograms\MyProgram.smw
 Status: Password Protection Found
