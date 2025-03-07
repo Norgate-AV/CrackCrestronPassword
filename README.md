@@ -1,13 +1,10 @@
 # CrackCrestronPassword
 
----
-
+[![GitHub Release](https://img.shields.io/github/v/release/Norgate-AV/CrackCrestronPassword)](https://github.com/Norgate-AV/CrackCrestronPassword/releases)
 [![CI](https://github.com/Norgate-AV/CrackCrestronPassword/actions/workflows/tests.yml/badge.svg)](https://github.com/Norgate-AV/CrackCrestronPassword/actions/workflows/tests.yml)
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-%23FE5196?logo=conventionalcommits&logoColor=white)](https://conventionalcommits.org)
 [![GitHub contributors](https://img.shields.io/github/contributors/Norgate-AV/CrackCrestronPassword)](https://github.com/Norgate-AV/CrackCrestronPassword/graphs/contributors)
 [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-
----
 
 A PowerShell utility to detect and decrypt password protection in Crestron program files (`.umc`, `.usp`, `.smw`).
 
@@ -15,35 +12,45 @@ A PowerShell utility to detect and decrypt password protection in Crestron progr
 
 Crestron programming files can be password-protected to prevent unauthorized access. This utility can detect whether a file has password protection and, if present, reveal the password by reverse-engineering the simple encryption scheme used.
 
-## Installation :inbox_tray:
+## Features :star:
 
-No installation required. Simply download the script and run it with PowerShell.
+-   Detects password-protected Crestron files
+-   Extracts encrypted password data
+-   Decrypts passwords using Crestron's simple encryption scheme
+-   Works with SMW, UMC, and USP file formats
+-   Cross-platform support (Windows, macOS, Linux)
 
-### Prerequisites
+## Prerequisites :heavy_check_mark:
 
 -   PowerShell 5.1 or newer (PowerShell Core/PowerShell 7+ supported)
 -   Windows, macOS, or Linux with PowerShell installed
 
 ## Usage :rocket:
 
+### Basic Usage
+
 ```powershell
-.\CrackCrestronPassword.ps1 -Path <path-to-file>
+# Run the script against a file
+./CrackCrestronPassword.ps1 -Path "/path/to/your/crestron/file.smw"
+
+# Use verbose output for more details
+./CrackCrestronPassword.ps1 -Path "/path/to/your/crestron/file.smw" -Verbose
 ```
 
 ### Example
 
+For password-protected files:
+
 ```powershell
 # Absolute path
-.\CrackCrestronPassword.ps1 -Path "C:\Projects\CrestronPrograms\MyProgram.smw"
+./CrackCrestronPassword.ps1 -Path "C:\Projects\CrestronPrograms\MyProgram.smw"
 
 # Relative path
-.\CrackCrestronPassword.ps1 -Path "MyProgram.smw"
+./CrackCrestronPassword.ps1 -Path "MyProgram.smw"
 
 # -Path is optional
-.\CrackCrestronPassword.ps1 "MyProgram.smw"
+./CrackCrestronPassword.ps1 "MyProgram.smw"
 ```
-
-### Output
 
 The script will output information about the provided file:
 
@@ -71,14 +78,28 @@ Crestron uses a simple encryption scheme for password protection:
 ## Project Structure :open_file_folder:
 
 ```
-crack-crestron-password/
+/
 ├── CrackCrestronPassword.ps1    # Main script
+├── CrackCrestronPassword.psd1   # Module manifest file
+├── Update-Version.ps1           # Version update script (optional)
+├── CHANGELOG.md                 # Changelog
+├── LICENSE                      # License file
+├── README.md                    # Project documentation
 ├── Run-Tests.ps1                # Test runner
-├── tests/
-│   ├── CrackCrestronPassword.Tests.ps1  # Test script
-│   └── samples/                 # Test sample files
-│       ├── protected/           # Password-protected sample files
-│       ├── unprotected/         # Non-protected sample files
+├── .github/                     # GitHub configuration
+│   ├── workflows/               # GitHub Actions workflows
+│   │   ├── version-update.yml   # Version update workflow
+│   │   └── tests.yml            # Test workflow
+│   └── changelog-config.json    # Changelog generator config
+└── tests/                       # Test directory
+    ├── CrackCrestronPassword.Tests.ps1  # Test script
+    └── samples/                 # Test sample files
+        ├── protected/           # Password-protected sample files
+        │   ├── sample1.smw      # Sample protected file
+        │   └── sample2.umc      # Sample protected file
+        └── unprotected/         # Non-protected sample files
+            ├── sample1.smw      # Sample unprotected file
+            └── sample2.usp      # Sample unprotected file
 ```
 
 ## Running Tests :test_tube:
