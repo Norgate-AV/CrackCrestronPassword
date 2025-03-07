@@ -1,6 +1,7 @@
 ### PowerShell ###
 # Exclude packaged modules
 *.zip
+TestResults/
 
 # Exclude .NET assemblies from source
 *.dll
