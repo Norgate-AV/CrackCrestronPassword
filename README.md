@@ -1,5 +1,14 @@
 # CrackCrestronPassword
 
+---
+
+[![CI](https://github.com/Norgate-AV/CrackCrestronPassword/actions/workflows/tests.yml/badge.svg)](https://github.com/Norgate-AV/CrackCrestronPassword/actions/workflows/tests.yml)
+[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-%23FE5196?logo=conventionalcommits&logoColor=white)](https://conventionalcommits.org)
+[![GitHub contributors](https://img.shields.io/github/contributors/Norgate-AV/CrackCrestronPassword)](https://github.com/Norgate-AV/CrackCrestronPassword/graphs/contributors)
+[![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+---
+
 A PowerShell utility to detect and decrypt password protection in Crestron program files (`.umc`, `.usp`, `.smw`).
 
 ## Overview :mag:
