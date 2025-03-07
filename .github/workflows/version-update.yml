@@ -1,0 +1,58 @@
+name: Update Version
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  update-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Important for changelog generation
+
+      - name: Extract version from tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Update PSD1 version
+        shell: pwsh
+        run: |
+          $psd1Path = "./CrackCrestronPassword.psd1"
+          $version = "${{ steps.get_version.outputs.VERSION }}"
+
+          $content = Get-Content -Path $psd1Path -Raw
+          $updatedContent = $content -replace "(ModuleVersion\s*=\s*['`"])[0-9]+\.[0-9]+\.[0-9]+(['`"])", "`${1}$version`$2"
+          $updatedContent | Set-Content -Path $psd1Path -NoNewline
+
+          Write-Host "Updated module version to $version"
+
+      - name: Generate changelog
+        id: github_changelog
+        uses: mikepenz/release-changelog-builder-action@v4
+        with:
+          configuration: ".github/changelog-config.json"
+          outputFile: "CHANGELOG.md"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Create a release directly from this workflow
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref }}
+          name: Release ${{ github.ref_name }}
+          body: ${{ steps.github_changelog.outputs.changelog }}
+          draft: false
+          prerelease: false
+          files: |
+            CrackCrestronPassword.ps1
+            CrackCrestronPassword.psd1
+            README.md
+            LICENSE
+            CHANGELOG.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
