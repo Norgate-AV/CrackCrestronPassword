@@ -63,6 +63,92 @@ function Write-Results {
     Write-Host "`n================================================="
 }
 
+# Function to format bytes as mixed hex/ASCII
+function Format-BytesAsMixedHexAscii {
+    param (
+        [Parameter(Mandatory = $true)]
+        [byte[]]$Bytes
+    )
+
+    $result = [System.Text.StringBuilder]::new()
+
+    foreach ($byte in $Bytes) {
+        # If the byte is a printable ASCII character (32-126), display as ASCII
+        if ($byte -ge 32 -and $byte -le 126) {
+            [void]$result.Append([char]$byte)
+        }
+        # Otherwise display as hex
+        else {
+            [void]$result.Append("<0x{0:X2}>" -f $byte)
+        }
+    }
+
+    return $result.ToString()
+}
+
+# Function to decrypt Crestron encrypted bytes
+function ConvertFrom-CrestronEncrypted {
+    param (
+        [Parameter(Mandatory = $true)]
+        [byte[]]$EncryptedBytes
+    )
+
+    $decrypted = ""
+    foreach ($byte in $EncryptedBytes) {
+        $decryptedByte = [int]($byte / 2)
+        if ($decryptedByte -lt 32 -or $decryptedByte -eq 127) {
+            # Replace control characters with their hex value for display
+            $decrypted += "<" + $decryptedByte + ">"
+        }
+        else {
+            $decrypted += [char]$decryptedByte
+        }
+    }
+
+    return $decrypted
+}
+
+# Function to find the end marker (TŠ) in a file
+function Find-EndMarker {
+    param (
+        [Parameter(Mandatory = $true)]
+        [byte[]]$FileBytes,
+
+        [Parameter(Mandatory = $true)]
+        [int]$StartSearchAt
+    )
+
+    # Look for the "TŠ" marker - T (0x54) followed by Š (0x8A)
+    for ($i = $StartSearchAt; $i -lt ($FileBytes.Length - 1); $i++) {
+        if ($FileBytes[$i] -eq 0x54 -and $FileBytes[$i + 1] -eq 0x8A) {
+            return $i
+        }
+    }
+
+    return -1  # Marker not found
+}
+
+# Function to find the start marker (T) before an end marker
+function Find-StartMarker {
+    param (
+        [Parameter(Mandatory = $true)]
+        [byte[]]$FileBytes,
+
+        [Parameter(Mandatory = $true)]
+        [int]$EndMarkerIndex
+    )
+
+    # Search backward from the end marker, limited to 25 bytes
+    # to avoid false positives from other T bytes in the file
+    for ($i = 2; $i -lt 25; $i++) {
+        if ($EndMarkerIndex - $i -ge 0 -and $FileBytes[$EndMarkerIndex - $i] -eq 0x54) {
+            return $EndMarkerIndex - $i
+        }
+    }
+
+    return -1  # Marker not found
+}
+
 # Read the file as bytes to avoid any text encoding issues
 try {
     $fileBytes = [System.IO.File]::ReadAllBytes($Path)
@@ -95,29 +181,14 @@ if ($feSchVrIndex -lt 0) {
     exit(0)
 }
 
-# Now look for the "TŠ" marker - T (0x54) followed by Š (0x8A)
-$endMarkerIndex = -1
-for ($i = $feSchVrIndex; $i -lt ($fileBytes.Length - 1); $i++) {
-    if ($fileBytes[$i] -eq 0x54 -and $fileBytes[$i + 1] -eq 0x8A) {
-        $endMarkerIndex = $i
-        break
-    }
-}
-
+# Find end marker and start marker using our new functions
+$endMarkerIndex = Find-EndMarker -FileBytes $fileBytes -StartSearchAt $feSchVrIndex
 if ($endMarkerIndex -lt 0) {
     Write-Results -Path $Path -Status "Password Protection Found, but no TŠ marker was detected"
     exit(1)
 }
 
-# Find the starting T marker by searching backward
-$startMarkerIndex = -1
-for ($i = 2; $i -lt 25; $i++) {
-    if ($endMarkerIndex - $i -ge 0 -and $fileBytes[$endMarkerIndex - $i] -eq 0x54) {
-        $startMarkerIndex = $endMarkerIndex - $i
-        break
-    }
-}
-
+$startMarkerIndex = Find-StartMarker -FileBytes $fileBytes -EndMarkerIndex $endMarkerIndex
 if ($startMarkerIndex -lt 0) {
     Write-Results -Path $Path -Status "Password Protection Found, but couldn't locate start marker"
     exit(1)
@@ -133,30 +204,10 @@ $encryptedString = [System.Text.Encoding]::Default.GetString($encryptedBytes)
 $encryptedHex = ($encryptedBytes | ForEach-Object { "0x{0:X2}" -f $_ }) -join " "
 
 # Create a mixed ASCII/hex representation (printable ASCII as-is, non-printable as hex)
-$encryptedMixed = ""
-foreach ($byte in $encryptedBytes) {
-    # If it's a printable ASCII character (32-126), show as-is
-    if ($byte -ge 32 -and $byte -le 126) {
-        $encryptedMixed += [char]$byte
-    }
-    # Otherwise show hex representation
-    else {
-        $encryptedMixed += "<0x{0:X2}>" -f $byte
-    }
-}
+$encryptedMixed = Format-BytesAsMixedHexAscii -Bytes $encryptedBytes
 
-# Decrypt bytes by dividing each byte by 2
-$decrypted = ""
-foreach ($byte in $encryptedBytes) {
-    $decryptedByte = [int]($byte / 2)
-    if ($decryptedByte -lt 32 -or $decryptedByte -eq 127) {
-        # Replace control characters with their hex value for display
-        $decrypted += "<" + $decryptedByte + ">"
-    }
-    else {
-        $decrypted += [char]$decryptedByte
-    }
-}
+# Decrypt the encrypted bytes
+$decrypted = ConvertFrom-CrestronEncrypted -EncryptedBytes $encryptedBytes
 
 # Display results
 Write-Results -Path $Path `

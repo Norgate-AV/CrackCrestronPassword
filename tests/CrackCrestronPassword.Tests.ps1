@@ -3,6 +3,28 @@ BeforeAll {
     $ScriptPath = "$PSScriptRoot\..\CrackCrestronPassword.ps1"
     $SamplesDir = "$PSScriptRoot\samples"
 
+    # Function to format bytes as mixed hex/ASCII
+    function Format-BytesAsMixedHexAscii {
+        param (
+            [Parameter(Mandatory = $true)][byte[]]$Bytes
+        )
+
+        $result = [System.Text.StringBuilder]::new()
+
+        foreach ($byte in $Bytes) {
+            # If the byte is a printable ASCII character (32-126), display as ASCII
+            if ($byte -ge 32 -and $byte -le 126) {
+                [void]$result.Append([char]$byte)
+            }
+            # Otherwise display as hex
+            else {
+                [void]$result.Append("<0x{0:X2}>" -f $byte)
+            }
+        }
+
+        return $result.ToString()
+    }
+
     # Helper function to create test files
     function New-TestFile {
         param (
