@@ -143,7 +143,7 @@ Describe "Crestron Password Cracker Tests" {
             $password = "password123"
             New-TestFile -FilePath $testFile -EncryptedPassword $password -WithMarkers
             $output = & $ScriptPath $resolvedTestFile *>&1
-            $output -join "`n" | Should -Match "Decrypted: $password"
+            $output -join "`n" | Should -Match "Password: $password"
         }
 
         It "Should correctly decrypt a password with special characters" {
@@ -153,7 +153,7 @@ Describe "Crestron Password Cracker Tests" {
 
             # Fix: Use -Like instead of -Match to avoid regex special character issues
             $outputText = $output -join "`n"
-            $outputText | Should -BeLike "*Decrypted: $password*"
+            $outputText | Should -BeLike "*Password: $password*"
 
             # Alternative fix: Escape special regex characters
             # $escapedPassword = [regex]::Escape($password)
@@ -239,7 +239,7 @@ Describe "Crestron Password Cracker Tests" {
             $output = & $ScriptPath $resolvedTestFile *>&1
             $outputText = $output -join "`n"
             $outputText | Should -Match "Password Protection Found"
-            $outputText | Should -Match ([regex]::Escape("Decrypted: $password"))
+            $outputText | Should -Match ([regex]::Escape("Password: $password"))
         }
 
         It "Should handle passwords with simple special characters" {
@@ -249,7 +249,7 @@ Describe "Crestron Password Cracker Tests" {
             $output = & $ScriptPath $resolvedTestFile *>&1
             $outputText = $output -join "`n"
             $outputText | Should -Match "Password Protection Found"
-            $outputText | Should -Match ([regex]::Escape("Decrypted: $password"))
+            $outputText | Should -Match ([regex]::Escape("Password: $password"))
         }
 
         It "Should handle passwords with spaces" {
@@ -258,7 +258,7 @@ Describe "Crestron Password Cracker Tests" {
             $output = & $ScriptPath $resolvedTestFile *>&1
             $outputText = $output -join "`n"
             $outputText | Should -Match "Password Protection Found"
-            $outputText | Should -Match ([regex]::Escape("Decrypted: $password"))
+            $outputText | Should -Match ([regex]::Escape("Password: $password"))
         }
 
         # New test for case insensitivity - if your script handles this
@@ -271,11 +271,20 @@ Describe "Crestron Password Cracker Tests" {
             $output = & $ScriptPath $resolvedTestFile *>&1
             $outputText = $output -join "`n"
             $outputText | Should -Match "Password Protection Found"
-            $outputText | Should -Match ([regex]::Escape("Decrypted: $password"))
+            $outputText | Should -Match ([regex]::Escape("Password: $password"))
 
             # Note: We're not actually testing case insensitivity here,
             # just documenting that Crestron treats passwords as case insensitive.
             # The actual case handling would be in the Crestron software itself.
+        }
+
+        It "Should handle mixed case passwords correctly" {
+            $mixedCasePassword = "MiXeD123"
+            New-TestFile -FilePath $testFile -EncryptedPassword $mixedCasePassword -WithMarkers
+            $output = & $ScriptPath $resolvedTestFile *>&1
+            $outputText = $output -join "`n"
+            $outputText | Should -Match "Password Protection Found"
+            $outputText | Should -Match ([regex]::Escape("Password: $mixedCasePassword"))
         }
     }
 
@@ -321,7 +330,7 @@ Describe "Crestron Password Cracker Tests" {
             $output = & $ScriptPath $resolvedPath *>&1
             $outputText = $output -join "`n"
             $outputText | Should -Match "Password Protection Found"
-            $outputText | Should -BeLike "*Decrypted: $password*"
+            $outputText | Should -BeLike "*Password: $password*"
         }
 
         It "Should handle malformed files" {
@@ -383,7 +392,7 @@ Describe "Crestron Password Cracker Tests" {
             $output = & $ScriptPath $resolvedPath *>&1
             $outputText = $output -join "`n"
             $outputText | Should -Match "Password Protection Found"
-            $outputText | Should -BeLike "*Decrypted: pass123*"
+            $outputText | Should -BeLike "*Password: pass123*"
         }
     }
 }
