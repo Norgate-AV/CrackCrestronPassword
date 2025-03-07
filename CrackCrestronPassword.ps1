@@ -48,6 +48,7 @@ function Write-Results {
         [string]$Decrypted = ""
     )
 
+    Write-Verbose "Writing results - Status: $Status"
     Write-Host "`n=========== Crestron Password Analyzer ===========`n"
     Write-Host "File: $Path"
     Write-Host "Status: $Status"
@@ -70,6 +71,7 @@ function Format-BytesAsMixedHexAscii {
         [byte[]]$Bytes
     )
 
+    Write-Verbose "Formatting ${$Bytes.Length} bytes as mixed hex/ASCII"
     $result = [System.Text.StringBuilder]::new()
 
     foreach ($byte in $Bytes) {
@@ -83,6 +85,7 @@ function Format-BytesAsMixedHexAscii {
         }
     }
 
+    Write-Verbose "Mixed format result length: $($result.Length)"
     return $result.ToString()
 }
 
@@ -93,6 +96,7 @@ function ConvertFrom-CrestronEncrypted {
         [byte[]]$EncryptedBytes
     )
 
+    Write-Verbose "Decrypting ${$EncryptedBytes.Length} bytes of Crestron encrypted data"
     $decrypted = ""
     foreach ($byte in $EncryptedBytes) {
         $decryptedByte = [int]($byte / 2)
@@ -105,6 +109,7 @@ function ConvertFrom-CrestronEncrypted {
         }
     }
 
+    Write-Verbose "Decrypted result length: $($decrypted.Length)"
     return $decrypted
 }
 
@@ -118,13 +123,16 @@ function Find-EndMarker {
         [int]$StartSearchAt
     )
 
+    Write-Verbose "Searching for end marker starting at position $StartSearchAt in ${$FileBytes.Length} bytes"
     # Look for the "TŠ" marker - T (0x54) followed by Š (0x8A)
     for ($i = $StartSearchAt; $i -lt ($FileBytes.Length - 1); $i++) {
         if ($FileBytes[$i] -eq 0x54 -and $FileBytes[$i + 1] -eq 0x8A) {
+            Write-Verbose "End marker found at position $i"
             return $i
         }
     }
 
+    Write-Verbose "End marker not found"
     return -1  # Marker not found
 }
 
@@ -138,14 +146,17 @@ function Find-StartMarker {
         [int]$EndMarkerIndex
     )
 
+    Write-Verbose "Searching for start marker before position $EndMarkerIndex"
     # Search backward from the end marker, limited to 25 bytes
     # to avoid false positives from other T bytes in the file
     for ($i = 2; $i -lt 25; $i++) {
         if ($EndMarkerIndex - $i -ge 0 -and $FileBytes[$EndMarkerIndex - $i] -eq 0x54) {
+            Write-Verbose "Start marker found at position $($EndMarkerIndex - $i)"
             return $EndMarkerIndex - $i
         }
     }
 
+    Write-Verbose "Start marker not found within 25 bytes before end marker"
     return -1  # Marker not found
 }
 
@@ -159,6 +170,7 @@ function Find-BytePattern {
         [string]$Pattern = "FeSchVr"
     )
 
+    Write-Verbose "Searching for pattern '$Pattern' in ${$FileBytes.Length} bytes"
     $patternBytes = [System.Text.Encoding]::ASCII.GetBytes($Pattern)
     $patternIndex = -1
 
@@ -176,12 +188,21 @@ function Find-BytePattern {
         }
     }
 
+    if ($patternIndex -ge 0) {
+        Write-Verbose "Pattern '$Pattern' found at position $patternIndex"
+    }
+    else {
+        Write-Verbose "Pattern '$Pattern' not found in file"
+    }
+
     return $patternIndex
 }
 
 # Read the file as bytes to avoid any text encoding issues
 try {
+    Write-Verbose "Reading file: $Path"
     $fileBytes = [System.IO.File]::ReadAllBytes($Path)
+    Write-Verbose "Successfully read $($fileBytes.Length) bytes from file"
 }
 catch {
     Write-Error "Failed to read file: $_"
@@ -189,30 +210,41 @@ catch {
 }
 
 # Look for "FeSchVr" in the binary data
+Write-Verbose "Searching for password protection marker 'FeSchVr'"
 $feSchVrIndex = Find-BytePattern -FileBytes $fileBytes
 
 if ($feSchVrIndex -lt 0) {
+    Write-Verbose "Password protection marker not found - file is not password protected"
     Write-Results -Path $Path -Status "No Password Protection"
     exit(0)
 }
 
+Write-Verbose "Password protection marker found at position $feSchVrIndex"
+
 # Find end marker and start marker using our new functions
+Write-Verbose "Searching for password encryption end marker"
 $endMarkerIndex = Find-EndMarker -FileBytes $fileBytes -StartSearchAt $feSchVrIndex
 if ($endMarkerIndex -lt 0) {
+    Write-Verbose "End marker not found - unable to locate password data"
     Write-Results -Path $Path -Status "Password Protection Found, but no TŠ marker was detected"
     exit(1)
 }
 
+Write-Verbose "Searching for password encryption start marker"
 $startMarkerIndex = Find-StartMarker -FileBytes $fileBytes -EndMarkerIndex $endMarkerIndex
 if ($startMarkerIndex -lt 0) {
+    Write-Verbose "Start marker not found - unable to locate password data"
     Write-Results -Path $Path -Status "Password Protection Found, but couldn't locate start marker"
     exit(1)
 }
 
 # Extract encrypted bytes between the markers
+Write-Verbose "Extracting encrypted bytes between positions $startMarkerIndex and $endMarkerIndex"
 $encryptedBytes = $fileBytes[($startMarkerIndex + 1)..($endMarkerIndex - 1)]
+Write-Verbose "Extracted $($encryptedBytes.Length) encrypted bytes"
 
 # Convert encrypted bytes to a string for display (original raw format)
+Write-Verbose "Converting encrypted bytes to various display formats"
 $encryptedString = [System.Text.Encoding]::Default.GetString($encryptedBytes)
 
 # Create a hex representation of the encrypted bytes for better readability
@@ -222,9 +254,12 @@ $encryptedHex = ($encryptedBytes | ForEach-Object { "0x{0:X2}" -f $_ }) -join " 
 $encryptedMixed = Format-BytesAsMixedHexAscii -Bytes $encryptedBytes
 
 # Decrypt the encrypted bytes
+Write-Verbose "Decrypting password data"
 $decrypted = ConvertFrom-CrestronEncrypted -EncryptedBytes $encryptedBytes
+Write-Verbose "Successfully decrypted password: $decrypted"
 
 # Display results
+Write-Verbose "Displaying final results"
 Write-Results -Path $Path `
     -Status "Password Protection Found" `
     -Encrypted "Hex: $encryptedHex`nMixed ASCII/Hex: $encryptedMixed`nRaw: $encryptedString" `
