@@ -59,10 +59,7 @@ The script will output information about the provided file:
 
 File: C:\Projects\CrestronPrograms\MyProgram.smw
 Status: Password Protection Found
-Encrypted: Hex: 0x78 0x7A 0x7E 0x8C 0x92
-Mixed ASCII/Hex: xz~<0x8C><0x92>
-Raw: xz~??
-Decrypted: ?=FI
+Password: ?=FI
 
 =================================================
 ```
