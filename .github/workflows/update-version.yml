@@ -1,0 +1,60 @@
+name: Update Version
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to bump to (e.g. 1.2.3)"
+        required: true
+      prerelease:
+        description: "Is this a prerelease?"
+        type: boolean
+        default: false
+
+jobs:
+  update-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Update manifest version
+        run: |
+          # Update version in module manifest if it exists
+          if [ -f "*.psd1" ]; then
+            sed -i "s/ModuleVersion = '.*'/ModuleVersion = '${{ github.event.inputs.version }}'/g" *.psd1
+          fi
+
+      - name: Generate changelog
+        id: changelog
+        uses: mikepenz/release-changelog-builder-action@v3
+        with:
+          configuration: ".github/changelog-config.json"
+          commitMode: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Pull Request or Commit
+        id: make-changes
+        run: |
+          git config --global user.name 'GitHub Actions'
+          git config --global user.email 'actions@github.com'
+          git add .
+          git commit -m "chore: bump version to ${{ github.event.inputs.version }}"
+          git push origin HEAD:refs/heads/version-${{ github.event.inputs.version }}
+          gh pr create --title "chore: bump version to ${{ github.event.inputs.version }}" --body "Updates version to ${{ github.event.inputs.version }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ github.event.inputs.version }}
+          name: Release v${{ github.event.inputs.version }}
+          body: ${{ steps.changelog.outputs.changelog }}
+          draft: false
+          prerelease: ${{ github.event.inputs.prerelease }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

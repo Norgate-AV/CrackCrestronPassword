@@ -1,54 +1,23 @@
 {
     "categories": [
-      {
-        "title": "## 🚀 Features",
-        "labels": ["feature", "enhancement"],
-        "commits": ["^feat"]
-      },
-      {
-        "title": "## 🐛 Fixes",
-        "labels": ["fix", "bug"],
-        "commits": ["^fix"]
-      },
-      {
-        "title": "## ⚡ Performance",
-        "labels": ["performance"],
-        "commits": ["^perf"]
-      },
-      {
-        "title": "## 🧪 Tests",
-        "labels": ["test"],
-        "commits": ["^test"]
-      }
-    ],
-    "ignore_labels": [
-      "ignore"
-    ],
-    "ignore_commits": [
-      "^docs",
-      "^chore",
-      "^ci",
-      "^style",
-      "^refactor"
+        {
+            "title": "## 🚀 Features",
+            "labels": [],
+            "pattern": "^feat:.*"
+        },
+        {
+            "title": "## 🐛 Fixes",
+            "labels": [],
+            "pattern": "^fix:.*"
+        },
+        {
+            "title": "## ⚡ Performance",
+            "labels": [],
+            "pattern": "^perf:.*"
+        }
     ],
     "sort": "ASC",
     "template": "${{CHANGELOG}}",
-    "pr_template": "- ${{TITLE}} by @${{AUTHOR}} in #${{NUMBER}}",
-    "empty_template": "- No changes",
-    "transformers": [
-      {
-        "pattern": "[\\-\\*] ([^\\n]+) \\(#(\\d+)\\) by @([^\\n]+)",
-        "target": "- $1 by @$3 in #$2"
-      }
-    ],
-    "max_tags_to_fetch": 200,
-    "max_pull_requests": 200,
-    "max_back_track_time_days": 365,
-    "tag_resolver": {
-      "method": "semver",
-      "filter": {
-        "pattern": "v?[0-9]+\\.[0-9]+\\.[0-9]+",
-        "flags": "gm"
-      }
-    }
+    "pr_template": "- ${{TITLE}} (#${{NUMBER}})",
+    "empty_template": "- No changes"
 }

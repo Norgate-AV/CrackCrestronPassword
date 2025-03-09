@@ -5,8 +5,60 @@ on:
     tags:
       - "v*"
 
+  workflow_dispatch:
+
 jobs:
+  # Run tests first
+  test:
+    name: Test on ${{ matrix.os }}
+
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PowerShell on non-Windows platforms
+        if: matrix.os != 'windows-latest'
+        run: |
+          # Display PowerShell version information
+          pwsh -c '$PSVersionTable'
+
+      - name: Run tests on Windows
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          # Enable script execution
+          Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force
+
+          # Run the tests
+          ./Run-Tests.ps1
+
+      - name: Run tests on macOS/Linux
+        if: matrix.os != 'windows-latest'
+        shell: pwsh
+        run: |
+          # Run the tests
+          ./Run-Tests.ps1
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.os }}
+          path: |
+            TestResults/
+            */TestResults/
+          if-no-files-found: ignore
+
+  # Only proceed with the version update if tests pass
   update-version:
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
