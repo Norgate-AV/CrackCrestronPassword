@@ -3,7 +3,7 @@
     RootModule        = 'CrackCrestronPassword.ps1'
 
     # Version number of this module.
-    ModuleVersion     = '0.1.0'
+    ModuleVersion     = '1.0.0'
 
     # ID used to uniquely identify this module
     GUID              = '6eef4e64-3926-4ac1-a86d-66e32e85c4a9'
