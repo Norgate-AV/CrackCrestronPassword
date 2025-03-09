@@ -70,7 +70,7 @@ jobs:
         with:
           fetch-depth: 0 # Important for changelog generation
           token: ${{ secrets.GITHUB_TOKEN }}
-          ref: main # Explicitly checkout the main branch
+          ref: master # Explicitly checkout the main branch
 
       - name: Extract version from tag
         id: get_version
