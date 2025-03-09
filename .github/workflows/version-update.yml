@@ -7,8 +7,13 @@ on:
 
   workflow_dispatch:
 
+# Add necessary permissions
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
-  # Run tests first
+  # Run tests first to ensure we don't release with failing tests
   test:
     name: Test on ${{ matrix.os }}
 
@@ -20,7 +25,7 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Setup PowerShell on non-Windows platforms
@@ -56,19 +61,22 @@ jobs:
             */TestResults/
           if-no-files-found: ignore
 
-  # Only proceed with the version update if tests pass
   update-version:
-    needs: test
+    needs: test # Only run if tests pass
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0 # Important for changelog generation
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract version from tag
         id: get_version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "Extracted version: $VERSION"
 
       - name: Update PSD1 version
         shell: pwsh
@@ -76,11 +84,16 @@ jobs:
           $psd1Path = "./CrackCrestronPassword.psd1"
           $version = "${{ steps.get_version.outputs.VERSION }}"
 
+          Write-Host "Updating version to: $version"
+          Write-Host "File exists: $(Test-Path $psd1Path)"
+
           $content = Get-Content -Path $psd1Path -Raw
           $updatedContent = $content -replace "(ModuleVersion\s*=\s*['`"])[0-9]+\.[0-9]+\.[0-9]+(['`"])", "`${1}$version`$2"
           $updatedContent | Set-Content -Path $psd1Path -NoNewline
 
-          Write-Host "Updated module version to $version"
+          # Verify the update worked
+          $newContent = Get-Content -Path $psd1Path -Raw
+          Write-Host "Updated content contains version: $($newContent.Contains($version))"
 
       - name: Generate changelog
         id: github_changelog
@@ -88,8 +101,18 @@ jobs:
         with:
           configuration: ".github/changelog-config.json"
           outputFile: "CHANGELOG.md"
+          failOnError: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify changelog generation
+        run: |
+          echo "Changelog output: ${{ steps.github_changelog.outputs.changelog }}"
+          echo "Changelog file exists: $(ls -la CHANGELOG.md || echo 'File not found')"
+          if [ -f "CHANGELOG.md" ]; then
+            echo "Changelog content:"
+            cat CHANGELOG.md
+          fi
 
       # Create a release directly from this workflow
       - name: Create GitHub Release
