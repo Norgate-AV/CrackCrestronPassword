@@ -114,6 +114,17 @@ jobs:
             cat CHANGELOG.md
           fi
 
+      # Commit the changes back to the repository
+      - name: Commit changes back to the repository
+        run: |
+          git config --global user.name 'GitHub Actions'
+          git config --global user.email 'actions@github.com'
+          git add CrackCrestronPassword.psd1 CHANGELOG.md
+          git commit -m "chore: update version to ${{ steps.get_version.outputs.VERSION }} [skip ci]"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       # Create a release directly from this workflow
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
