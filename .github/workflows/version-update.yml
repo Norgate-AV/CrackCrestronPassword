@@ -102,9 +102,5 @@ jobs:
           prerelease: false
           files: |
             CrackCrestronPassword.ps1
-            CrackCrestronPassword.psd1
-            README.md
-            LICENSE
-            CHANGELOG.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
